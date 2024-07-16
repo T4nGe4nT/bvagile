@@ -1,13 +1,20 @@
+/* styles.css */
+
+body {
+    background-color: #f0f0f0;
+    font-family: 'Lato', sans-serif;
+    margin: 0;
+    padding: 0;
+}
 
 .maincont {
     max-width: 800px;
     margin: auto;
-   
+    padding: 20px;
+    text-align: center;
 }
 
-
 .container-fluid {
-   
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -17,6 +24,8 @@
 .card {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
 }
 
 #posts-container .d-flex {
@@ -33,16 +42,23 @@
 #posts-container img {
     width: 40px;
     height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
 }
 
 .btn {
-    background-color: #4EA5ff;
-    border: none;
+    margin-top: 10px;
 }
 
 .btn-primary {
-    background-color: #4EA5ff;
+    background-color: #1da1f2; /* Twitter blue */
     border: none;
+}
+
+.btn-dark {
+    background-color: #333;
+    border: none;
+    color: white;
 }
 
 .btn-primary:focus,
@@ -50,9 +66,6 @@
     box-shadow: none;
 }
 
-.btn-dark {
-
-    background-color: #102542;
-    border: none;
-    margin-top: 10px;
+.form-control {
+    margin-bottom: 0; /* Adjust margin for form inputs */
 }
