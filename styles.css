@@ -8,6 +8,7 @@ body {
 
 }
 
+
 .maincont {
     max-width: 800px;
     margin: auto;
@@ -71,11 +72,3 @@ body {
     margin-bottom: 0; /* Adjust margin for form inputs */
 }
 
-footer {
-    background-color: #f8f9fa;
-    padding: 1rem 0;
-    width: 100%;
-    text-align: center;
-    position: fixed;
-    bottom: 0%;
-}
