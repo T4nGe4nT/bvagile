@@ -4,9 +4,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     const searchForm = document.getElementById('search-form');
     const editIdInput = document.createElement('input');
+
+//character limit 
+const messageInput = document.getElementById('message'); // Added for character limit
+const charLimit = 250; // Added for character limit
+const charCountDisplay = document.createElement('small'); // Added for character limit
+charCountDisplay.id = 'char-count'; // Added for character limit
+messageInput.parentElement.appendChild(charCountDisplay); // Added for character limit
+//character limit
+
+
     editIdInput.type = 'hidden';
     editIdInput.id = 'edit-id';
     postForm.appendChild(editIdInput);
+
+//character limit
+messageInput.addEventListener('input', updateCharCount); // Added for character limit
+
+function updateCharCount() { // Added for character limit
+    const currentLength = messageInput.value.length;
+        charCountDisplay.textContent = `${currentLength}/${charLimit} characters`;
+
+        if (currentLength > charLimit) {
+            charCountDisplay.style.color = 'red';
+            postForm.querySelector('button[type="submit"]').disabled = true;
+        } else {
+            charCountDisplay.style.color = 'black';
+            postForm.querySelector('button[type="submit"]').disabled = false;
+        }
+    }
+//character limit    
+    
 
     // Event listener for form submission with validation
     postForm.addEventListener('submit', function(e) {
@@ -20,6 +48,14 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('All fields are required!');
             return;
         }
+
+//character limit 
+        if (content.length > charLimit) { // Added for character limit
+        alert(`Message exceeds ${charLimit} characters limit!`);
+        return;
+        }
+//character limit 
+
         if (!validateEmail(email)) {
             alert('Invalid email address!');
             return;
@@ -35,6 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.reset();
         document.getElementById('edit-id').value = '';
         document.querySelector('.btn-close').click();
+
+//character limit      
+        updateCharCount(); // Reset character count display after submission
+//character limit         
     });
 
     // Function to validate email addresses
@@ -191,4 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
             deletePost(parseInt(deleteId));
         }
     });
+
+//character limit
+    updateCharCount(); // Added for character limit  
+//character limit 
 });
