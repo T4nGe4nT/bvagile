@@ -4,64 +4,89 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     const searchForm = document.getElementById('search-form');
     const editIdInput = document.createElement('input');
+
+    const charLimit = 250;
+    const messageInput = document.getElementById('message');
+    const charCountDisplay = document.getElementById('char-count');
+    const formModal = new bootstrap.Modal(document.getElementById('formModal'));
+    const modalTitle = document.getElementById('formModalLabel');
+    const createPostBtn = document.getElementById('create-post-btn');
+
     editIdInput.type = 'hidden';
     editIdInput.id = 'edit-id';
     postForm.appendChild(editIdInput);
 
-    // Event listener for form submission with validation
-    postForm.addEventListener('submit', function(e) {
+    messageInput.addEventListener('input', updateCharCount);
+
+    function updateCharCount() {
+        const currentLength = messageInput.value.length;
+        charCountDisplay.textContent = `${currentLength}/${charLimit} characters`;
+        charCountDisplay.style.color = currentLength > charLimit ? 'red' : 'black';
+        postForm.querySelector('button[type="submit"]').disabled = currentLength > charLimit;
+    }
+
+    postForm.addEventListener('submit', function (e) {
         e.preventDefault();
-        const content = document.getElementById('message').value.trim();
+        const content = messageInput.value.trim();
         const author = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
-        const editId = document.getElementById('edit-id').value;
+        const photoInput = document.getElementById('photo');
+        let photoData = null;
 
+        if (photoInput.files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                photoData = event.target.result;
+                handlePostSubmission(content, author, email, photoData);
+            };
+            reader.readAsDataURL(photoInput.files[0]);
+        } else {
+            handlePostSubmission(content, author, email, photoData);
+        }
+    });
+
+    function handlePostSubmission(content, author, email, photoData) {
         if (content === '' || author === '' || email === '') {
             alert('All fields are required!');
             return;
         }
-        if (!validateEmail(email)) {
-            alert('Invalid email address!');
-            return;
-        }
 
-        // If inputs are valid, create or update a post
+        const editId = document.getElementById('edit-id').value;
+
         if (editId) {
-            updatePost(parseInt(editId), content, author, email);
+            updatePost(parseInt(editId), content, author, email, photoData);
         } else {
-            createPost(content, author, email);
+            createPost(content, author, email, photoData);
         }
 
-        e.target.reset();
+        postForm.reset();
         document.getElementById('edit-id').value = '';
         document.querySelector('.btn-close').click();
-    });
-
-    // Function to validate email addresses
-    function validateEmail(email) {
-        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@(([^<>()\[\]\\.,;:\s@"]+\.)+[^<>()\[\]\\.,;:\s@"]{2,})$/i;
-        return re.test(String(email).toLowerCase());
+        updateCharCount();
     }
 
-    // Utility function to get posts from localStorage
+    createPostBtn.addEventListener('click', () => {
+        modalTitle.textContent = 'Create New Post';
+        postForm.reset();
+        updateCharCount();
+    });
+
     function getPosts() {
         return JSON.parse(localStorage.getItem('posts')) || [];
     }
 
-    // Utility function to save posts to localStorage
     function savePosts(posts) {
         localStorage.setItem('posts', JSON.stringify(posts));
     }
 
-    // Function to create a new post using the validated input values
-    function createPost(content, author, email) {
+    function createPost(content, author, email, photoData) {
         const posts = getPosts();
         const newPost = {
             id: Date.now(),
             content,
             author,
             email,
-            date: new Date().toLocaleString(),
+            photo: photoData,
             upVotes: 0,
             downVotes: 0
         };
@@ -70,111 +95,101 @@ document.addEventListener('DOMContentLoaded', () => {
         displayPosts();
     }
 
-    // Function to update an existing post
-    function updatePost(id, content, author, email) {
-        const posts = getPosts();
-        const postIndex = posts.findIndex(p => p.id === id);
-        if (postIndex !== -1) {
-            posts[postIndex] = {
-                ...posts[postIndex],
-                content,
-                author,
-                email,
-                date: new Date().toLocaleString()
-            };
-            savePosts(posts);
-            displayPosts();
+    function createComment(postId, username, content) {
+        const comments = getComments();
+        const newComment = {
+            id: Date.now(),
+            content,
+            postId,
+            username,
+            date: new Date().toLocaleString()
+        };
+        if (!comments[postId]) {
+            comments[postId] = [];
+        }
+        comments[postId].push(newComment);
+        saveComments(comments);
+        displayComments(postId);
+    }
+
+    function displayComments(postId) {
+        const comments = getComments();
+        const commentsContainer = document.getElementById(`comments-container-${postId}`);
+        commentsContainer.innerHTML = '';
+
+        if (comments[postId]) {
+            comments[postId].forEach(comment => {
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('mb-2');
+                commentElement.innerHTML = `
+                    <p><strong>${comment.username}:</strong> ${comment.content} <small class="text-muted">(${comment.date})</small></p>
+                `;
+                commentsContainer.appendChild(commentElement);
+            });
         }
     }
 
-    // Function to edit a post
-    function editPost(id) {
-        const posts = getPosts();
-        const post = posts.find(p => p.id === id);
-        if (post) {
-            document.getElementById('name').value = post.author;
-            document.getElementById('email').value = post.email;
-            document.getElementById('message').value = post.content;
-            document.getElementById('edit-id').value = id;
-            new bootstrap.Modal(document.getElementById('formModal')).show();
-        }
+    function getComments() {
+        return JSON.parse(localStorage.getItem('comments')) || {};
     }
 
-    // Function to delete a post
-    function deletePost(id) {
-        let posts = getPosts();
-        posts = posts.filter(p => p.id !== id);
-        savePosts(posts);
-        displayPosts();
+    function saveComments(comments) {
+        localStorage.setItem('comments', JSON.stringify(comments));
     }
 
-    // Function to up-vote a post
-    function upVotePost(id) {
-        const posts = getPosts();
-        const postIndex = posts.findIndex(p => p.id === id);
-        if (postIndex !== -1) {
-            posts[postIndex].upVotes += 1;
-            savePosts(posts);
-            displayPosts();
-        }
-    }
-
-    // Function to down-vote a post
-    function downVotePost(id) {
-        const posts = getPosts();
-        const postIndex = posts.findIndex(p => p.id === id);
-        if (postIndex !== -1) {
-            posts[postIndex].downVotes += 1;
-            savePosts(posts);
-            displayPosts();
-        }
-    }
-
-    // Function to display posts in the UI
     function displayPosts() {
         const posts = getPosts();
         postsContainer.innerHTML = '';
 
         const fragment = document.createDocumentFragment();
-
         posts.forEach((post) => {
             const postElement = document.createElement('div');
             postElement.classList.add('card', 'mb-3');
             postElement.innerHTML = `
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center">
-                            <div>
-                                <h6 class="mb-0">${post.author}</h6>
-                                <p class="text-muted mb-0">${post.content}</p>
-                            </div>
-                        </div>
-                        <div>
-                            <button class="btn btn-sm btn-primary me-2" data-edit="${post.id}">Edit</button>
-                            <button class="btn btn-sm btn-dark me-2" data-delete="${post.id}">Delete</button>
-                            <button class="btn btn-sm btn-success me-2" data-upvote="${post.id}">Up-vote (${post.upVotes})</button>
-                            <button class="btn btn-sm btn-danger" data-downvote="${post.id}">Down-vote (${post.downVotes})</button>
-                        </div>
-                    </div>
-                </div>
+ <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center">
+            <div>
+                <h5 class="mb-0"><strong>${post.author}</strong></h5>
+                <p class="text-muted mb-0">${post.content}</p>
+            </div>
+        </div>
+        <div>
+            <button class="btn btn-sm btn-primary me-2" data-edit="${post.id}">Edit</button>
+            <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
+        </div>
+    </div>
+    ${post.photo ? `<img src="${post.photo}" class="img-fluid mb-2" alt="Post Image">` : ''}
+    <button class="btn btn-sm btn-upvote me-2" data-upvote="${post.id}">⬆ (${post.upVotes})</button>
+    <button class="btn btn-sm btn-downvote" data-downvote="${post.id}">⬇ (${post.downVotes})</button>
+    <hr>
+    <div id="comments-container-${post.id}">
+        <!-- Comments will be dynamically added here -->
+    </div>
+    <form class="d-flex mt-2" data-post-id="${post.id}">
+        <input type="text" class="form-control me-2" placeholder="Name" aria-label="Username" id="comment-username">
+        <input type="text" class="form-control me-2" placeholder="Add a comment..." aria-label="Comment">
+        <button class="btn btn-primary" type="submit">Comment</button>
+    </form>
+</div>
+
             `;
             fragment.appendChild(postElement);
         });
 
         postsContainer.appendChild(fragment);
+
+        // Display comments for each post
+        posts.forEach(post => displayComments(post.id));
     }
 
-    // Display posts on page load
-    displayPosts();
-
-    // Search functionality
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const searchTerm = searchInput.value.toLowerCase();
         const posts = getPosts();
 
         postsContainer.innerHTML = '';
-        const filteredPosts = posts.filter(post => 
+        const filteredPosts = posts.filter(post =>
             post.content.toLowerCase().includes(searchTerm) ||
             post.author.toLowerCase().includes(searchTerm)
         );
@@ -195,11 +210,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div>
                             <button class="btn btn-sm btn-primary me-2" data-edit="${post.id}">Edit</button>
-                            <button class="btn btn-sm btn-dark me-2" data-delete="${post.id}">Delete</button>
-                            <button class="btn btn-sm btn-success me-2" data-upvote="${post.id}">Up-vote (${post.upVotes})</button>
-                            <button class="btn btn-sm btn-danger" data-downvote="${post.id}">Down-vote (${post.downVotes})</button>
+                            <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
                         </div>
                     </div>
+                    <button class="btn btn-sm btn-upvote me-2" data-upvote="${post.id}">⬆ (${post.upVotes})</button>
+                    <button class="btn btn-sm btn-downvote" data-downvote="${post.id}">⬇ (${post.downVotes})</button>
+                    <div id="comments-container-${post.id}">
+                        <!-- Comments will be dynamically added here -->
+                    </div>
+                    <form class="d-flex mt-2" data-post-id="${post.id}">
+                        <input type="text" class="form-control me-2" placeholder="Name" aria-label="Username" id="comment-username">
+                        <input type="text" class="form-control me-2" placeholder="Add a comment..." aria-label="Comment">
+                        <button class="btn btn-primary" type="submit">Comment</button>
+                    </form>
                 </div>
             `;
             fragment.appendChild(postElement);
@@ -208,7 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
         postsContainer.appendChild(fragment);
     });
 
-    // Event delegation for edit, delete, up-vote, and down-vote buttons
     postsContainer.addEventListener('click', (e) => {
         const editId = e.target.dataset.edit;
         const deleteId = e.target.dataset.delete;
@@ -225,4 +247,80 @@ document.addEventListener('DOMContentLoaded', () => {
             downVotePost(parseInt(downVoteId));
         }
     });
+
+    postsContainer.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const postId = e.target.dataset.postId;
+        const username = e.target.querySelector('#comment-username').value.trim();
+        const content = e.target.querySelector('input[aria-label="Comment"]').value.trim();
+
+        if (username === '' || content === '') {
+            alert('Both username and comment are required!');
+            return;
+        }
+
+        createComment(postId, username, content);
+        e.target.reset();
+    });
+
+    function updatePost(id, content, author, email, photoData) {
+        const posts = getPosts();
+        const postIndex = posts.findIndex(p => p.id === id);
+        if (postIndex !== -1) {
+            posts[postIndex] = {
+                id,
+                content,
+                author,
+                email,
+                photo: photoData,
+                upVotes: posts[postIndex].upVotes,
+                downVotes: posts[postIndex].downVotes
+            };
+            savePosts(posts);
+            displayPosts();
+        }
+    }
+
+    function editPost(id) {
+        const posts = getPosts();
+        const post = posts.find(p => p.id === id);
+        if (post) {
+            document.getElementById('name').value = post.author;
+            document.getElementById('email').value = post.email;
+            document.getElementById('message').value = post.content;
+            document.getElementById('edit-id').value = id;
+            modalTitle.textContent = 'Edit Post';
+            formModal.show();
+            updateCharCount();
+        }
+    }
+
+    function deletePost(id) {
+        let posts = getPosts();
+        posts = posts.filter(p => p.id !== id);
+        savePosts(posts);
+        displayPosts();
+    }
+
+    function upVotePost(id) {
+        const posts = getPosts();
+        const postIndex = posts.findIndex(p => p.id === id);
+        if (postIndex !== -1) {
+            posts[postIndex].upVotes += 1;
+            savePosts(posts);
+            displayPosts();
+        }
+    }
+
+    function downVotePost(id) {
+        const posts = getPosts();
+        const postIndex = posts.findIndex(p => p.id === id);
+        if (postIndex !== -1) {
+            posts[postIndex].downVotes += 1;
+            savePosts(posts);
+            displayPosts();
+        }
+    }
+
+    displayPosts();
 });
