@@ -16,8 +16,16 @@ document.addEventListener('DOMContentLoaded', () => {
     editIdInput.id = 'edit-id';
     postForm.appendChild(editIdInput);
 
-    // Event listener for form submission with validation
-    postForm.addEventListener('submit', function(e) {
+    messageInput.addEventListener('input', updateCharCount);
+
+    function updateCharCount() {
+        const currentLength = messageInput.value.length;
+        charCountDisplay.textContent = `${currentLength}/${charLimit} characters`;
+        charCountDisplay.style.color = currentLength > charLimit ? 'red' : 'black';
+        postForm.querySelector('button[type="submit"]').disabled = currentLength > charLimit;
+    }
+
+    postForm.addEventListener('submit', function (e) {
         e.preventDefault();
         const content = messageInput.value.trim();
         const author = document.getElementById('name').value.trim();
@@ -42,12 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('All fields are required!');
             return;
         }
-        if (!validateEmail(email)) {
-            alert('Invalid email address!');
-            return;
-        }
 
-        // If inputs are valid, create or update a post
+        const editId = document.getElementById('edit-id').value;
+
         if (editId) {
             updatePost(parseInt(editId), content, author, email, photoData);
         } else {
@@ -57,15 +62,15 @@ document.addEventListener('DOMContentLoaded', () => {
         postForm.reset();
         document.getElementById('edit-id').value = '';
         document.querySelector('.btn-close').click();
-    });
-
-    // Function to validate email addresses
-    function validateEmail(email) {
-        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@(([^<>()\[\]\\.,;:\s@"]+\.)+[^<>()\[\]\\.,;:\s@"]{2,})$/i;
-        return re.test(String(email).toLowerCase());
+        updateCharCount();
     }
 
-    // Utility function to get posts from localStorage
+    createPostBtn.addEventListener('click', () => {
+        modalTitle.textContent = 'Create New Post';
+        postForm.reset();
+        updateCharCount();
+    });
+
     function getPosts() {
         return JSON.parse(localStorage.getItem('posts')) || [];
     }
@@ -82,6 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
             author,
             email,
             photo: photoData,
+            upVotes: 0,
+            downVotes: 0
         };
         posts.push(newPost);
         savePosts(posts);
@@ -95,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
             content,
             postId,
             username,
-            date: new Date().toLocaleString(),
+            date: new Date().toLocaleString()
         };
         if (!comments[postId]) {
             comments[postId] = [];
@@ -133,9 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayPosts() {
         const posts = getPosts();
         postsContainer.innerHTML = '';
-    
-        const fragment = document.createDocumentFragment();
 
+        const fragment = document.createDocumentFragment();
         posts.forEach((post) => {
             const postElement = document.createElement('div');
             postElement.classList.add('card', 'mb-3');
@@ -154,6 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     </div>
     ${post.photo ? `<img src="${post.photo}" class="img-fluid mb-2" alt="Post Image">` : ''}
+    <button class="btn btn-sm btn-upvote me-2" data-upvote="${post.id}">⬆ (${post.upVotes})</button>
+    <button class="btn btn-sm btn-downvote" data-downvote="${post.id}">⬇ (${post.downVotes})</button>
     <hr>
     <div id="comments-container-${post.id}">
         <!-- Comments will be dynamically added here -->
@@ -168,17 +176,13 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             fragment.appendChild(postElement);
         });
-    
+
         postsContainer.appendChild(fragment);
 
         // Display comments for each post
         posts.forEach(post => displayComments(post.id));
     }
 
-    // Display posts on page load
-    displayPosts();
-
-    // Search functionality
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const searchTerm = searchInput.value.toLowerCase();
@@ -209,6 +213,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
                         </div>
                     </div>
+                    <button class="btn btn-sm btn-upvote me-2" data-upvote="${post.id}">⬆ (${post.upVotes})</button>
+                    <button class="btn btn-sm btn-downvote" data-downvote="${post.id}">⬇ (${post.downVotes})</button>
                     <div id="comments-container-${post.id}">
                         <!-- Comments will be dynamically added here -->
                     </div>
@@ -228,11 +234,93 @@ document.addEventListener('DOMContentLoaded', () => {
     postsContainer.addEventListener('click', (e) => {
         const editId = e.target.dataset.edit;
         const deleteId = e.target.dataset.delete;
+        const upVoteId = e.target.dataset.upvote;
+        const downVoteId = e.target.dataset.downvote;
 
         if (editId) {
             editPost(parseInt(editId));
         } else if (deleteId) {
             deletePost(parseInt(deleteId));
+        } else if (upVoteId) {
+            upVotePost(parseInt(upVoteId));
+        } else if (downVoteId) {
+            downVotePost(parseInt(downVoteId));
         }
     });
+
+    postsContainer.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const postId = e.target.dataset.postId;
+        const username = e.target.querySelector('#comment-username').value.trim();
+        const content = e.target.querySelector('input[aria-label="Comment"]').value.trim();
+
+        if (username === '' || content === '') {
+            alert('Both username and comment are required!');
+            return;
+        }
+
+        createComment(postId, username, content);
+        e.target.reset();
+    });
+
+    function updatePost(id, content, author, email, photoData) {
+        const posts = getPosts();
+        const postIndex = posts.findIndex(p => p.id === id);
+        if (postIndex !== -1) {
+            posts[postIndex] = {
+                id,
+                content,
+                author,
+                email,
+                photo: photoData,
+                upVotes: posts[postIndex].upVotes,
+                downVotes: posts[postIndex].downVotes
+            };
+            savePosts(posts);
+            displayPosts();
+        }
+    }
+
+    function editPost(id) {
+        const posts = getPosts();
+        const post = posts.find(p => p.id === id);
+        if (post) {
+            document.getElementById('name').value = post.author;
+            document.getElementById('email').value = post.email;
+            document.getElementById('message').value = post.content;
+            document.getElementById('edit-id').value = id;
+            modalTitle.textContent = 'Edit Post';
+            formModal.show();
+            updateCharCount();
+        }
+    }
+
+    function deletePost(id) {
+        let posts = getPosts();
+        posts = posts.filter(p => p.id !== id);
+        savePosts(posts);
+        displayPosts();
+    }
+
+    function upVotePost(id) {
+        const posts = getPosts();
+        const postIndex = posts.findIndex(p => p.id === id);
+        if (postIndex !== -1) {
+            posts[postIndex].upVotes += 1;
+            savePosts(posts);
+            displayPosts();
+        }
+    }
+
+    function downVotePost(id) {
+        const posts = getPosts();
+        const postIndex = posts.findIndex(p => p.id === id);
+        if (postIndex !== -1) {
+            posts[postIndex].downVotes += 1;
+            savePosts(posts);
+            displayPosts();
+        }
+    }
+
+    displayPosts();
 });
