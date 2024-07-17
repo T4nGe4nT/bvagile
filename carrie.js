@@ -1,74 +1,94 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // Initialize posts from local storage
-    const posts = JSON.parse(localStorage.getItem('posts')) || [];
 
-    // Function to display posts in the UI
-    function displayPosts() {
-        const postsContainer = document.getElementById('posts-container');
-        postsContainer.innerHTML = '';
 
-        posts.forEach((post, index) => {
-            const postElement = document.createElement('div');
-            postElement.classList.add('d-flex', 'justify-content-between', 'align-items-start', 'mb-3');
-            postElement.innerHTML = `
-                <div class="d-flex">
+// Event listener for form submission with validation
+
+postForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const content = document.getElementById('message').value.trim();
+    const author = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const image = document.getElementById('image').files[0]; // Get the first file (assuming only one file is uploaded)
+    const editId = document.getElementById('edit-id').value;
+
+    if (content === '' || author === '' || email === '') {
+        alert('All fields are required!');
+        return;
+    }
+    if (!validateEmail(email)) {
+        alert('Invalid email address!');
+        return;
+    }
+
+    // Prepare post object to save in local storage
+    const newPost = {
+        id: Date.now(),
+        content,
+        author,
+        email,
+        image: image ? URL.createObjectURL(image) : null, // Store image URL or null if no image
+        date: new Date().toLocaleString()
+    };
+
+    if (editId) {
+        updatePost(parseInt(editId), newPost); // Update existing post
+    } else {
+        createPost(newPost); // Create new post
+    }
+
+    e.target.reset();
+    document.getElementById('edit-id').value = '';
+    document.querySelector('.btn-close').click();
+});
+
+// Function to create a new post in local storage
+function createPost(post) {  // New function added
+    const posts = getPosts();
+    posts.push(post);
+    savePosts(posts);
+    displayPosts();
+}
+
+// Function to update an existing post in local storage
+function updatePost(id, updatedPost) {  // New function added
+    let posts = getPosts();
+    const postIndex = posts.findIndex(p => p.id === id);
+    if (postIndex !== -1) {
+        posts[postIndex] = updatedPost;
+        savePosts(posts);
+        displayPosts();
+    }
+}
+
+// Function to display posts in the UI
+function displayPosts() {  // Updated function to display images
+    const posts = getPosts();
+    postsContainer.innerHTML = '';
+
+    const fragment = document.createDocumentFragment();
+
+    posts.forEach((post) => {
+        const postElement = document.createElement('div');
+        postElement.classList.add('card', 'mb-3');
+        postElement.innerHTML = `
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <h6 class="mb-0">${post.author}</h6>
+                            <p class="text-muted mb-0">${post.content}</p>
+                            ${post.image ? `<img src="${post.image}" class="img-fluid img-preview" />` : ''}
+                        </div>
+                    </div>
                     <div>
-                        <h6>${post.author}</h6>
-                        <p class="mb-0">${post.content}</p>
+                        <button class="btn btn-sm btn-primary me-2" data-edit="${post.id}">Edit</button>
+                        <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
                     </div>
                 </div>
-                <div>
-                    <button class="btn btn-sm btn-primary me-2" onclick="editPost(${index})">Edit</button>
-                    <button class="btn btn-sm btn-dark" onclick="deletePost(${index})">Delete</button>
-                </div>
-            `;
-            postsContainer.appendChild(postElement);
-        });
-    }
-
-    // Function to add a new post
-    function addPost(author, content) {
-        posts.push({
-            author: author,
-            content: content,
-            date: new Date().toISOString().split('T')[0]
-        });
-        localStorage.setItem('posts', JSON.stringify(posts));
-        displayPosts();
-    }
-
-    // Function to update an existing post
-    function updatePost(index, author, content) {
-        posts[index].author = author;
-        posts[index].content = content;
-        localStorage.setItem('posts', JSON.stringify(posts));
-        displayPosts();
-    }
-
-    // Function to handle form submission
-    document.querySelector('form').addEventListener('submit', function (event) {
-        event.preventDefault();
-
-        const author = document.getElementById('name').value;
-        const content = document.getElementById('message').value;
-        const editIndex = document.getElementById('formModal').dataset.editIndex;
-
-        if (editIndex !== undefined) {
-            // Update existing post
-            updatePost(editIndex, author, content);
-        } else {
-            // Add new post
-            addPost(author, content);
-        }
-
-        // Reset form
-        document.querySelector('form').reset();
-        delete document.getElementById('formModal').dataset.editIndex;
-        const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
-        modal.hide();
-        displayPosts();
+            </div>
+        `;
+        fragment.appendChild(postElement);
     });
 
-     // Initial display of posts
-    displayPosts();
-});
+    postsContainer.appendChild(fragment);
+}
