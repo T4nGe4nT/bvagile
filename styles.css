@@ -8,6 +8,20 @@ body {
 
 }
 
+.btn-upvote {
+    color: white;
+    background-color: #1da1f2;
+    border: none;
+}
+
+.btn-downvote {
+    color: white;
+    background-color: gray;
+    border: none;
+}
+
+
+
 
 .maincont {
     max-width: 800px;
