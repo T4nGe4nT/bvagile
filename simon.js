@@ -87,6 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
             author,
             email,
             photo: photoData,
+            upVotes: 0,
+            downVotes: 0
         };
         posts.push(newPost);
         savePosts(posts);
@@ -100,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
             content,
             postId,
             username,
-            date: new Date().toLocaleString(),
+            date: new Date().toLocaleString()
         };
         if (!comments[postId]) {
             comments[postId] = [];
@@ -158,6 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     </div>
     ${post.photo ? `<img src="${post.photo}" class="img-fluid mb-2" alt="Post Image">` : ''}
+    <button class="btn btn-sm btn-upvote me-2" data-upvote="${post.id}">⬆ (${post.upVotes})</button>
+    <button class="btn btn-sm btn-downvote" data-downvote="${post.id}">⬇ (${post.downVotes})</button>
     <hr>
     <div id="comments-container-${post.id}">
         <!-- Comments will be dynamically added here -->
@@ -209,6 +213,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
                         </div>
                     </div>
+                    <button class="btn btn-sm btn-upvote me-2" data-upvote="${post.id}">⬆ (${post.upVotes})</button>
+                    <button class="btn btn-sm btn-downvote" data-downvote="${post.id}">⬇ (${post.downVotes})</button>
                     <div id="comments-container-${post.id}">
                         <!-- Comments will be dynamically added here -->
                     </div>
@@ -228,11 +234,17 @@ document.addEventListener('DOMContentLoaded', () => {
     postsContainer.addEventListener('click', (e) => {
         const editId = e.target.dataset.edit;
         const deleteId = e.target.dataset.delete;
+        const upVoteId = e.target.dataset.upvote;
+        const downVoteId = e.target.dataset.downvote;
 
         if (editId) {
             editPost(parseInt(editId));
         } else if (deleteId) {
             deletePost(parseInt(deleteId));
+        } else if (upVoteId) {
+            upVotePost(parseInt(upVoteId));
+        } else if (downVoteId) {
+            downVotePost(parseInt(downVoteId));
         }
     });
 
@@ -261,6 +273,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 author,
                 email,
                 photo: photoData,
+                upVotes: posts[postIndex].upVotes,
+                downVotes: posts[postIndex].downVotes
             };
             savePosts(posts);
             displayPosts();
@@ -286,6 +300,26 @@ document.addEventListener('DOMContentLoaded', () => {
         posts = posts.filter(p => p.id !== id);
         savePosts(posts);
         displayPosts();
+    }
+
+    function upVotePost(id) {
+        const posts = getPosts();
+        const postIndex = posts.findIndex(p => p.id === id);
+        if (postIndex !== -1) {
+            posts[postIndex].upVotes += 1;
+            savePosts(posts);
+            displayPosts();
+        }
+    }
+
+    function downVotePost(id) {
+        const posts = getPosts();
+        const postIndex = posts.findIndex(p => p.id === id);
+        if (postIndex !== -1) {
+            posts[postIndex].downVotes += 1;
+            savePosts(posts);
+            displayPosts();
+        }
     }
 
     displayPosts();
