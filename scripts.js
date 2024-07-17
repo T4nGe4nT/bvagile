@@ -30,24 +30,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const content = messageInput.value.trim();
         const author = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
-        const editId = document.getElementById('edit-id').value;
+        const photoInput = document.getElementById('photo');
+        let photoData = null;
 
+        if (photoInput.files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                photoData = event.target.result;
+                handlePostSubmission(content, author, email, photoData);
+            };
+            reader.readAsDataURL(photoInput.files[0]);
+        } else {
+            handlePostSubmission(content, author, email, photoData);
+        }
+    });
+
+    function handlePostSubmission(content, author, email, photoData) {
         if (content === '' || author === '' || email === '') {
             alert('All fields are required!');
             return;
         }
 
+        const editId = document.getElementById('edit-id').value;
+
         if (editId) {
-            updatePost(parseInt(editId), content, author, email);
+            updatePost(parseInt(editId), content, author, email, photoData);
         } else {
-            createPost(content, author, email);
+            createPost(content, author, email, photoData);
         }
 
-        e.target.reset();
+        postForm.reset();
         document.getElementById('edit-id').value = '';
         document.querySelector('.btn-close').click();
         updateCharCount();
-    });
+    }
 
     createPostBtn.addEventListener('click', () => {
         modalTitle.textContent = 'Create New Post';
@@ -63,13 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('posts', JSON.stringify(posts));
     }
 
-    function createPost(content, author, email) {
+    function createPost(content, author, email, photoData) {
         const posts = getPosts();
         const newPost = {
             id: Date.now(),
             content,
             author,
             email,
+            photo: photoData,
         };
         posts.push(newPost);
         savePosts(posts);
@@ -127,29 +144,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const postElement = document.createElement('div');
             postElement.classList.add('card', 'mb-3');
             postElement.innerHTML = `
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center">
-                            <div>
-                                <h5 class="mb-0"><strong>${post.author}</strong></h5>
-                                <p class="text-muted mb-0">${post.content}</p>
-                            </div>
-                        </div>
-                        <div>
-                            <button class="btn btn-sm btn-primary me-2" data-edit="${post.id}">Edit</button>
-                            <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
-                        </div>
-                    </div>
-                    <hr>
-                    <div id="comments-container-${post.id}">
-                        <!-- Comments will be dynamically added here -->
-                    </div>
-                    <form class="d-flex mt-2" data-post-id="${post.id}">
-                        <input type="text" class="form-control me-2" placeholder="Name" aria-label="Username" id="comment-username">
-                        <input type="text" class="form-control me-2" placeholder="Add a comment..." id="comment-messsage" aria-label="Comment">
-                        <button class="btn btn-primary" type="submit">Comment</button>
-                    </form>
-                </div>
+ <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center">
+            <div>
+                <h5 class="mb-0"><strong>${post.author}</strong></h5>
+                <p class="text-muted mb-0">${post.content}</p>
+            </div>
+        </div>
+        <div>
+            <button class="btn btn-sm btn-primary me-2" data-edit="${post.id}">Edit</button>
+            <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
+        </div>
+    </div>
+    ${post.photo ? `<img src="${post.photo}" class="img-fluid mb-2" alt="Post Image">` : ''}
+    <hr>
+    <div id="comments-container-${post.id}">
+        <!-- Comments will be dynamically added here -->
+    </div>
+    <form class="d-flex mt-2" data-post-id="${post.id}">
+        <input type="text" class="form-control me-2" placeholder="Name" aria-label="Username" id="comment-username">
+        <input type="text" class="form-control me-2" placeholder="Add a comment..." aria-label="Comment">
+        <button class="btn btn-primary" type="submit">Comment</button>
+    </form>
+</div>
+
             `;
             fragment.appendChild(postElement);
         });
@@ -232,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.reset();
     });
 
-    function updatePost(id, content, author, email) {
+    function updatePost(id, content, author, email, photoData) {
         const posts = getPosts();
         const postIndex = posts.findIndex(p => p.id === id);
         if (postIndex !== -1) {
@@ -241,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 content,
                 author,
                 email,
+                photo: photoData,
             };
             savePosts(posts);
             displayPosts();
