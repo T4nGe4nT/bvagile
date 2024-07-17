@@ -5,234 +5,187 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchForm = document.getElementById('search-form');
     const editIdInput = document.createElement('input');
 
-//character limit 
-const messageInput = document.getElementById('message'); // Added for character limit
-const charLimit = 250; // Added for character limit
-const charCountDisplay = document.createElement('small'); // Added for character limit
-charCountDisplay.id = 'char-count'; // Added for character limit
-messageInput.parentElement.appendChild(charCountDisplay); // Added for character limit
-//character limit
-
+    const charLimit = 250;
+    const messageInput = document.getElementById('message');
+    const charCountDisplay = document.getElementById('char-count');
+    const formModal = new bootstrap.Modal(document.getElementById('formModal'));
+    const modalTitle = document.getElementById('formModalLabel');
+    const createPostBtn = document.getElementById('create-post-btn');
 
     editIdInput.type = 'hidden';
     editIdInput.id = 'edit-id';
     postForm.appendChild(editIdInput);
 
-//character limit
-messageInput.addEventListener('input', updateCharCount); // Added for character limit
+    messageInput.addEventListener('input', updateCharCount);
 
-function updateCharCount() { // Added for character limit
-    const currentLength = messageInput.value.length;
+    function updateCharCount() {
+        const currentLength = messageInput.value.length;
         charCountDisplay.textContent = `${currentLength}/${charLimit} characters`;
-
-        if (currentLength > charLimit) {
-            charCountDisplay.style.color = 'red';
-            postForm.querySelector('button[type="submit"]').disabled = true;
-        } else {
-            charCountDisplay.style.color = 'black';
-            postForm.querySelector('button[type="submit"]').disabled = false;
-        }
+        charCountDisplay.style.color = currentLength > charLimit ? 'red' : 'black';
+        postForm.querySelector('button[type="submit"]').disabled = currentLength > charLimit;
     }
-//character limit    
-    
 
-    // Event listener for form submission with validation
-    postForm.addEventListener('submit', function(e) {
+    postForm.addEventListener('submit', function (e) {
         e.preventDefault();
-        const content = document.getElementById('message').value.trim();
+        const content = messageInput.value.trim();
         const author = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
-        const editId = document.getElementById('edit-id').value;
+        const photoInput = document.getElementById('photo');
+        let photoData = null;
 
+        if (photoInput.files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                photoData = event.target.result;
+                handlePostSubmission(content, author, email, photoData);
+            };
+            reader.readAsDataURL(photoInput.files[0]);
+        } else {
+            handlePostSubmission(content, author, email, photoData);
+        }
+    });
+
+    function handlePostSubmission(content, author, email, photoData) {
         if (content === '' || author === '' || email === '') {
             alert('All fields are required!');
             return;
         }
 
-//character limit 
-        if (content.length > charLimit) { // Added for character limit
-        alert(`Message exceeds ${charLimit} characters limit!`);
-        return;
-        }
-//character limit 
+        const editId = document.getElementById('edit-id').value;
 
-        if (!validateEmail(email)) {
-            alert('Invalid email address!');
-            return;
-        }
-
-        // If inputs are valid, create or update a post
         if (editId) {
-            updatePost(parseInt(editId), content, author, email);
+            updatePost(parseInt(editId), content, author, email, photoData);
         } else {
-            createPost(content, author, email);
+            createPost(content, author, email, photoData);
         }
 
-        e.target.reset();
+        postForm.reset();
         document.getElementById('edit-id').value = '';
         document.querySelector('.btn-close').click();
-
-//character limit      
-        updateCharCount(); // Reset character count display after submission
-//character limit         
-    });
-
-    // Function to validate email addresses
-    function validateEmail(email) {
-        const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@(([^<>()\[\]\\.,;:\s@"]+\.)+[^<>()\[\]\\.,;:\s@"]{2,})$/i;
-        return re.test(String(email).toLowerCase());
+        updateCharCount();
     }
 
-    // Utility function to get posts from localStorage
+    createPostBtn.addEventListener('click', () => {
+        modalTitle.textContent = 'Create New Post';
+        postForm.reset();
+        updateCharCount();
+    });
+
     function getPosts() {
         return JSON.parse(localStorage.getItem('posts')) || [];
     }
 
-    // Utility function to save posts to localStorage
     function savePosts(posts) {
         localStorage.setItem('posts', JSON.stringify(posts));
     }
 
-    // Function to create a new post using the validated input values
-    function createPost(content, author, email) {
+    function createPost(content, author, email, photoData) {
         const posts = getPosts();
         const newPost = {
             id: Date.now(),
             content,
             author,
             email,
-            date: new Date().toLocaleString()
+            photo: photoData,
         };
         posts.push(newPost);
         savePosts(posts);
         displayPosts();
     }
 
-    // Function to update an existing post
-    function updatePost(id, content, author, email) {
-        const posts = getPosts();
-        const postIndex = posts.findIndex(p => p.id === id);
-        if (postIndex !== -1) {
-            posts[postIndex] = {
-                id,
-                content,
-                author,
-                email,
-                date: new Date().toLocaleString()
-            };
-            savePosts(posts);
-            displayPosts();
+    function createComment(postId, username, content) {
+        const comments = getComments();
+        const newComment = {
+            id: Date.now(),
+            content,
+            postId,
+            username,
+            date: new Date().toLocaleString(),
+        };
+        if (!comments[postId]) {
+            comments[postId] = [];
+        }
+        comments[postId].push(newComment);
+        saveComments(comments);
+        displayComments(postId);
+    }
+
+    function displayComments(postId) {
+        const comments = getComments();
+        const commentsContainer = document.getElementById(`comments-container-${postId}`);
+        commentsContainer.innerHTML = '';
+
+        if (comments[postId]) {
+            comments[postId].forEach(comment => {
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('mb-2');
+                commentElement.innerHTML = `
+                    <p><strong>${comment.username}:</strong> ${comment.content} <small class="text-muted">(${comment.date})</small></p>
+                `;
+                commentsContainer.appendChild(commentElement);
+            });
         }
     }
 
-    // Function to edit a post
-    function editPost(id) {
-        const posts = getPosts();
-        const post = posts.find(p => p.id === id);
-        if (post) {
-            document.getElementById('name').value = post.author;
-            document.getElementById('email').value = post.email;
-            document.getElementById('message').value = post.content;
-            document.getElementById('edit-id').value = id;
-            new bootstrap.Modal(document.getElementById('formModal')).show();
-        }
+    function getComments() {
+        return JSON.parse(localStorage.getItem('comments')) || {};
     }
 
-    // Function to delete a post
-    function deletePost(id) {
-        let posts = getPosts();
-        posts = posts.filter(p => p.id !== id);
-        savePosts(posts);
-        displayPosts();
+    function saveComments(comments) {
+        localStorage.setItem('comments', JSON.stringify(comments));
     }
 
-    // Function to display posts in the UI
     function displayPosts() {
         const posts = getPosts();
         postsContainer.innerHTML = '';
-    
-        const fragment = document.createDocumentFragment();
-        
-        // Limit the number of posts displayed initially
-        const postsToDisplay = posts.slice(0, 10); // Change 10 to the desired number of posts to display
-    
-        postsToDisplay.forEach((post) => {
-            const postElement = document.createElement('div');
-            postElement.classList.add('card', 'mb-3');
-            postElement.innerHTML = `
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center">
-                            <div>
-                                <h6 class="mb-0">${post.author}</h6>
-                                <p class="text-muted mb-0">${post.content}</p>
-                            </div>
-                        </div>
-                        <div>
-                            <button class="btn btn-sm btn-primary me-2" data-edit="${post.id}">Edit</button>
-                            <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            fragment.appendChild(postElement);
-        });
-    
-        postsContainer.appendChild(fragment);
-    
-        // Implement infinite scroll or load more functionality if needed
-        postsContainer.addEventListener('scroll', () => {
-            if (postsContainer.scrollTop + postsContainer.clientHeight >= postsContainer.scrollHeight) {
-                loadMorePosts(posts);
-            }
-        });
-    }
-    
-    let currentPostIndex = 4; // Initial number of posts displayed
-    
-    function loadMorePosts(posts) {
-        const fragment = document.createDocumentFragment();
-        
-        const nextPosts = posts.slice(currentPostIndex, currentPostIndex + 4); // Load next 10 posts
-        currentPostIndex += 4;
-        
-        nextPosts.forEach((post) => {
-            const postElement = document.createElement('div');
-            postElement.classList.add('card', 'mb-3');
-            postElement.innerHTML = `
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center">
-                            <div>
-                                <h6 class="mb-0">${post.author}</h6>
-                                <p class="text-muted mb-0">${post.content}</p>
-                            </div>
-                        </div>
-                        <div>
-                            <button class="btn btn-sm btn-primary me-2" data-edit="${post.id}">Edit</button>
-                            <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            fragment.appendChild(postElement);
-        });
-    
-        postsContainer.appendChild(fragment);
-    }
-    
-    // Display posts on page load
-    displayPosts();
-    
 
-    // Search functionality
+        const fragment = document.createDocumentFragment();
+        posts.forEach((post) => {
+            const postElement = document.createElement('div');
+            postElement.classList.add('card', 'mb-3');
+            postElement.innerHTML = `
+ <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center">
+            <div>
+                <h5 class="mb-0"><strong>${post.author}</strong></h5>
+                <p class="text-muted mb-0">${post.content}</p>
+            </div>
+        </div>
+        <div>
+            <button class="btn btn-sm btn-primary me-2" data-edit="${post.id}">Edit</button>
+            <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
+        </div>
+    </div>
+    ${post.photo ? `<img src="${post.photo}" class="img-fluid mb-2" alt="Post Image">` : ''}
+    <hr>
+    <div id="comments-container-${post.id}">
+        <!-- Comments will be dynamically added here -->
+    </div>
+    <form class="d-flex mt-2" data-post-id="${post.id}">
+        <input type="text" class="form-control me-2" placeholder="Name" aria-label="Username" id="comment-username">
+        <input type="text" class="form-control me-2" placeholder="Add a comment..." aria-label="Comment">
+        <button class="btn btn-primary" type="submit">Comment</button>
+    </form>
+</div>
+
+            `;
+            fragment.appendChild(postElement);
+        });
+
+        postsContainer.appendChild(fragment);
+
+        // Display comments for each post
+        posts.forEach(post => displayComments(post.id));
+    }
+
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const searchTerm = searchInput.value.toLowerCase();
         const posts = getPosts();
 
         postsContainer.innerHTML = '';
-        const filteredPosts = posts.filter(post => 
+        const filteredPosts = posts.filter(post =>
             post.content.toLowerCase().includes(searchTerm) ||
             post.author.toLowerCase().includes(searchTerm)
         );
@@ -256,6 +209,14 @@ function updateCharCount() { // Added for character limit
                             <button class="btn btn-sm btn-dark" data-delete="${post.id}">Delete</button>
                         </div>
                     </div>
+                    <div id="comments-container-${post.id}">
+                        <!-- Comments will be dynamically added here -->
+                    </div>
+                    <form class="d-flex mt-2" data-post-id="${post.id}">
+                        <input type="text" class="form-control me-2" placeholder="Name" aria-label="Username" id="comment-username">
+                        <input type="text" class="form-control me-2" placeholder="Add a comment..." aria-label="Comment">
+                        <button class="btn btn-primary" type="submit">Comment</button>
+                    </form>
                 </div>
             `;
             fragment.appendChild(postElement);
@@ -264,7 +225,6 @@ function updateCharCount() { // Added for character limit
         postsContainer.appendChild(fragment);
     });
 
-    // Event delegation for edit and delete buttons
     postsContainer.addEventListener('click', (e) => {
         const editId = e.target.dataset.edit;
         const deleteId = e.target.dataset.delete;
@@ -276,7 +236,57 @@ function updateCharCount() { // Added for character limit
         }
     });
 
-//character limit
-    updateCharCount(); // Added for character limit  
-//character limit 
+    postsContainer.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const postId = e.target.dataset.postId;
+        const username = e.target.querySelector('#comment-username').value.trim();
+        const content = e.target.querySelector('input[aria-label="Comment"]').value.trim();
+
+        if (username === '' || content === '') {
+            alert('Both username and comment are required!');
+            return;
+        }
+
+        createComment(postId, username, content);
+        e.target.reset();
+    });
+
+    function updatePost(id, content, author, email, photoData) {
+        const posts = getPosts();
+        const postIndex = posts.findIndex(p => p.id === id);
+        if (postIndex !== -1) {
+            posts[postIndex] = {
+                id,
+                content,
+                author,
+                email,
+                photo: photoData,
+            };
+            savePosts(posts);
+            displayPosts();
+        }
+    }
+
+    function editPost(id) {
+        const posts = getPosts();
+        const post = posts.find(p => p.id === id);
+        if (post) {
+            document.getElementById('name').value = post.author;
+            document.getElementById('email').value = post.email;
+            document.getElementById('message').value = post.content;
+            document.getElementById('edit-id').value = id;
+            modalTitle.textContent = 'Edit Post';
+            formModal.show();
+            updateCharCount();
+        }
+    }
+
+    function deletePost(id) {
+        let posts = getPosts();
+        posts = posts.filter(p => p.id !== id);
+        savePosts(posts);
+        displayPosts();
+    }
+
+    displayPosts();
 });
