@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const apiKey = 'e6916882cf4c45788fafada1ff530605';
-    const country = 'us';
-    const url = `https://newsapi.org/v2/top-headlines?country=${country}&apiKey=${apiKey}`;
-    const maxArticles = 10; // Limit the number of articles displayed
+    const apiToken = 'KNypmCi9W2li8Ak7IChfSm0YAtnCx4xgqfJ8YgW4';
+    const url = `https://api.thenewsapi.com/v1/news/top?api_token=${apiToken}&locale=us&limit=3`;
 
     fetch(url)
         .then(response => response.json())
@@ -10,12 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const newsContainer = document.getElementById('news-container');
             newsContainer.innerHTML = ''; // Clear any previous content
 
-            if (data.articles && data.articles.length > 0) {
-                const articlesToShow = data.articles.slice(0, maxArticles); // Limit the number of articles
-                articlesToShow.forEach(article => {
-                    if (article.title.includes('[Removed]') || 
-                        (article.description && article.description.includes('[Removed]')) ||
-                        !article.urlToImage) {
+            if (data.data && data.data.length > 0) {
+                data.data.forEach(article => {
+                    if (!article.image_url || !article.title || !article.description) {
                         return;
                     }
 
@@ -24,10 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     articleElement.innerHTML = `
                         <div class="card">
-                            <img src="${article.urlToImage}" class="card-img-top" alt="${article.title}">
+                            <img src="${article.image_url}" class="card-img-top" alt="${article.title}">
                             <div class="card-body">
-                                <h5 class="card-title">${article.title.replace(/\[Removed\]/g, '')}</h5>
-                                <p class="card-text">${article.description ? article.description.replace(/\[Removed\]/g, '') : ''}</p>
+                                <h5 class="card-title">${article.title}</h5>
+                                <p class="card-text">${article.description}</p>
                                 <a href="${article.url}" class="btn btn-primary" target="_blank">Read more</a>
                             </div>
                         </div>
