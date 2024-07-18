@@ -22,7 +22,7 @@
     <div class="container py-5 content">
         <div class="row">
             <!-- Event calendar container -->
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card shadow-sm" id="cloned-container">
                     <div class="card-body">
                         <form class="d-flex mb-4" id="search-form-clone">
@@ -37,7 +37,7 @@
             </div>
 
             <!-- Main post container -->
-            <div class="col-md-8">
+            <div class="col-md-6">
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <div class="d-flex justify-content-center align-items-stretch mb-4">
@@ -54,6 +54,17 @@
 
                         <div id="posts-container">
                             <!-- Posts will be dynamically added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News API container -->
+            <div class="col-md-3 newscont">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div id="news-container" class="row">
+                            <!-- News articles will be dynamically added here -->
                         </div>
                     </div>
                 </div>
@@ -133,5 +144,6 @@
     <!-- Custom JS -->
     <script src="scripts.js"></script>
     <script src="localevent.js"></script>
+    <script src="news.js"></script>
 </body>
 </html>
