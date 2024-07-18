@@ -1,5 +1,3 @@
-/* styles.css */
-
 body {
     background-color: #f0f0f0;
     font-family: 'Lato', sans-serif;
@@ -7,6 +5,60 @@ body {
     padding: 0;
 
 }
+
+#comment-username {
+    margin-right: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+#comment-text {
+    margin-left: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+#search-form {
+    display: flex;
+    align-items: stretch;
+    height: 100%;
+   
+}
+.createbtn {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    gap: 0 !important;
+}
+
+#search-btn {
+    height: 100%;
+}
+
+#search-input {
+    height: 36px;
+    border-radius: 0;
+    margin-top: 10px;
+    gap: 0 !important;
+}
+
+#search-btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.btn-upvote {
+    color: white;
+    background-color: #1da1f2;
+    border: none;
+}
+
+.btn-downvote {
+    color: white;
+    background-color: gray;
+    border: none;
+}
+
+
 
 
 .maincont {
@@ -47,7 +99,7 @@ body {
     margin-right: 10px;
 }
 #posts-container {
-    max-height: 400px; /* Adjust the height as needed */
+    max-height: 665px; /* Adjust the height as needed */
     overflow-y: auto;
 }
 
