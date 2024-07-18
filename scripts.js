@@ -223,8 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <form class="d-flex mt-2" data-post-id="${post.id}">
                         <input type="text" class="form-control me-2" placeholder="Name" aria-label="Username" id="comment-username">
-                        <input type="text" class="form-control me-2" placeholder="Add a comment..." aria-label="Comment">
-                        <button class="btn btn-primary" type="submit">Comment</button>
+                        <input type="text" class="form-control me-2" placeholder="Add a comment..." aria-label="Comment" id="comment-text">
+                        <button class="btn btn-primary" type="submit" id="comment-btn">Comment</button>
                     </form>
                 </div>
             `;
