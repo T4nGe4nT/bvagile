@@ -64,8 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <p>${comment}</p>
       </div>
       <div class="ms-auto">
-        <button class="btn btn-dark btn-sm edit-btn">Edit</button>
-        <button class="btn btn-danger btn-sm delete-btn">Delete</button>
+        <button class="btn btn-sm edit-btn">Edit</button>
+        <button class="btn btn-sm delete-btn">Delete</button>
       </div>
     `;
 
