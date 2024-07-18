@@ -115,7 +115,7 @@ body {
     margin-right: 10px;
 }
 #posts-container {
-    max-height: 665px; /* Adjust the height as needed */
+    max-height: 536px; /* Adjust the height as needed */
     overflow-y: auto;
 }
 
@@ -144,3 +144,28 @@ body {
     margin-bottom: 0; /* Adjust margin for form inputs */
 }
 
+
+#news-container {
+    max-height: 600px; /* Adjust the height as needed */
+    overflow-y: auto;
+}
+
+.edit-btn {
+    background-color: #1da1f2;
+    color: #f0f0f0;
+}
+
+.delete-btn {
+    background-color: #333;
+    color: #f0f0f0;
+}
+
+.edit-btn:hover {
+    background-color: rgba(0, 95, 211, 1);
+    color: #f0f0f0;
+}
+.delete-btn:hover {
+    background-color: black;
+    color: #f0f0f0;
+
+}
