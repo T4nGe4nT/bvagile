@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     searchForm.addEventListener('submit', handleSearch);
     searchInput.addEventListener('input', handleSearch); // New event listener for dynamic search
     postsContainer.addEventListener('click', handlePostActions);
+    postsContainer.addEventListener('submit', handleCommentSubmit);
 
     // Functions
     function updateCharCount() {
@@ -112,6 +113,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function handleCommentSubmit(e) {
+        e.preventDefault();
+        const postId = e.target.dataset.postId;
+        const username = e.target.querySelector('#comment-username').value.trim();
+        const content = e.target.querySelector('input[aria-label="Comment"]').value.trim();
+
+        if (username === '' || content === '') {
+            alert('Both username and comment are required!');
+            return;
+        }
+
+        createComment(postId, username, content);
+        e.target.reset();
+    }
+
     function getPosts() {
         return JSON.parse(localStorage.getItem('posts')) || [];
     }
@@ -134,6 +150,48 @@ document.addEventListener('DOMContentLoaded', () => {
         posts.push(newPost);
         savePosts(posts);
         displayPosts(posts);
+    }
+
+    function createComment(postId, username, content) {
+        const comments = getComments();
+        const newComment = {
+            id: Date.now(),
+            content,
+            postId,
+            username,
+            date: new Date().toLocaleString()
+        };
+        if (!comments[postId]) {
+            comments[postId] = [];
+        }
+        comments[postId].push(newComment);
+        saveComments(comments);
+        displayComments(postId);
+    }
+
+    function displayComments(postId) {
+        const comments = getComments();
+        const commentsContainer = document.getElementById(`comments-container-${postId}`);
+        commentsContainer.innerHTML = '';
+
+        if (comments[postId]) {
+            comments[postId].forEach(comment => {
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('mb-2');
+                commentElement.innerHTML = `
+                    <p><strong>${comment.username}:</strong> ${comment.content} <small class="text-muted">(${comment.date})</small></p>
+                `;
+                commentsContainer.appendChild(commentElement);
+            });
+        }
+    }
+
+    function getComments() {
+        return JSON.parse(localStorage.getItem('comments')) || {};
+    }
+
+    function saveComments(comments) {
+        localStorage.setItem('comments', JSON.stringify(comments));
     }
 
     function displayPosts(posts = getPosts()) {
