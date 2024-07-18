@@ -10,12 +10,18 @@ body {
     margin-right: 0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+    
 }
 
 #comment-text {
     margin-left: 0;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+    
+}
+
+#comment-btn {
+ margin-bottom: 10px;
 }
 
 #search-form {
@@ -46,9 +52,19 @@ body {
     border-bottom-left-radius: 0;
 }
 
+.btn-upvote:hover {
+    background-color: rgba(0, 95, 211, 1);
+    color: #f0f0f0;
+}
+
+.btn-downvote:hover {
+    background-color: black;
+    color: #f0f0f0;
+}
 .btn-upvote {
     color: white;
     background-color: #1da1f2;
+    
     border: none;
 }
 
