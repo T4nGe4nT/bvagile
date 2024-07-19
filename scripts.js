@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     searchForm.addEventListener('submit', handleSearch);
     postsContainer.addEventListener('click', handlePostActions);
     postsContainer.addEventListener('submit', handleCommentSubmit);
+    searchInput.addEventListener('input', handleSearch); // New event listener for dynamic search
 
     // Functions
     function updateCharCount() {
