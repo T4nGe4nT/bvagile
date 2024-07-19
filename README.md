@@ -8,6 +8,7 @@ Key Functionality
 - Read post
 - Edit post
 - delete post
+- Search for post by name
 
 Extra Functionality 
 - Like or Dislike a post
@@ -18,3 +19,4 @@ Extra Functionality
 
 
 Everything is saved to local storage. 
+It does not ship with any post. so make some post & events to seee functionality.
